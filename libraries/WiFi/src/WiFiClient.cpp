@@ -478,7 +478,8 @@ void WiFiClient::flush() {
     if(!buf){
         return;//memory error
     }
-    while(a){
+    unsigned long start = millis();
+    for (;;) {
         toRead = (a>WIFI_CLIENT_FLUSH_BUFFER_SIZE)?WIFI_CLIENT_FLUSH_BUFFER_SIZE:a;
         res = recv(fd(), buf, toRead, MSG_DONTWAIT);
         if(res < 0) {
@@ -487,6 +488,13 @@ void WiFiClient::flush() {
             break;
         }
         a -= res;
+        if (!a) break;
+        if (millis() - start > 1000) {
+            log_e("fail on fd %d, read timeout", fd());
+            stop();
+            break;
+        }
+        delay(50);
     }
     free(buf);
 }
